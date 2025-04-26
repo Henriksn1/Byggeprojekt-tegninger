@@ -1,0 +1,33 @@
+
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detaljetegninger Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+</head>
+<body>
+  <div id="toolbar">
+    <input type="file" id="file-input" accept="application/pdf">
+    <select id="material-selector"></select>
+    <button onclick="setTool('select')">Vælg</button>
+    <button onclick="setTool('rect')">Firkant</button>
+    <button onclick="setTool('circle')">Cirkel</button>
+    <button onclick="setTool('line')">Streg</button>
+    <button onclick="setTool('polyline')">Polylinje</button>
+    <button onclick="setTool('cloud')">Sky</button>
+    <button onclick="setTool('text')">Kommentar</button>
+    <button onclick="setTool('measure')">Måling</button>
+    <button onclick="undo()">Fortryd</button>
+    <button onclick="redo()">Gendan</button>
+    <button onclick="saveProject()">Gem</button>
+    <button onclick="exportPDF()">Eksportér PDF</button>
+  </div>
+  <div id="viewerContainer">
+    <canvas id="pdf-canvas"></canvas>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
