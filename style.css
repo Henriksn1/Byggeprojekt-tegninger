@@ -2,8 +2,13 @@
 body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
 
 #toolbar {
-  background: #333; color: #fff;
-  padding: 6px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  background: #333;
+  color: #fff;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 #toolbar input[type=file],
@@ -11,20 +16,35 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 #toolbar input[type=text],
 #toolbar input[type=number],
 #toolbar input[type=color] {
-  font-size: 14px; padding: 5px; border: none; border-radius: 2px; background: #fff; color: #000;
+  font-size: 14px;
+  padding: 5px;
+  border: none;
+  border-radius: 2px;
+  background: #fff;
+  color: #000;
 }
 
 #toolbar button {
-  background: #555; color: #fff; border: none; padding: 6px 8px; cursor: pointer;
+  background: #555;
+  color: #fff;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
 }
-#toolbar button:hover { background: #777; }
+#toolbar button:hover {
+  background: #777;
+}
 
 #canvas-container {
-  width: 100%; height: calc(100vh - 48px);
-  background: #666; display: flex; justify-content: center; align-items: center;
+  width: 100%;
+  height: calc(100vh - 48px);
+  background: #666;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 canvas#c {
-  background: #fff; box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
 }
-
