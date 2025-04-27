@@ -2,36 +2,41 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Detaljetegninger Pro</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Build-Draw Pro</title>
   <link rel="stylesheet" href="style.css">
+  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <!-- Fabric.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
 </head>
 <body>
   <div id="toolbar">
     <input type="file" id="file-input" accept="application/pdf">
     <select id="material-selector">
-      <option value="none">Vælg materiale</option>
+      <option value="none">Materiale…</option>
       <option value="concrete">Beton</option>
       <option value="wood">Træ</option>
-      <option value="insulation">Blød isolering</option>
+      <option value="insulation-hard">Hård isolering</option>
+      <option value="insulation-soft">Blød isolering</option>
     </select>
-    <button onclick="setTool('select')">Vælg</button>
-    <button onclick="setTool('rect')">Firkant</button>
-    <button onclick="setTool('circle')">Cirkel</button>
-    <button onclick="setTool('line')">Streg</button>
-    <button onclick="setTool('polyline')">Polylinje</button>
-    <button onclick="setTool('cloud')">Sky</button>
-    <button onclick="setTool('text')">Kommentar</button>
-    <button onclick="setTool('measure')">Måling</button>
-    <button onclick="undo()">Fortryd</button>
-    <button onclick="redo()">Gendan</button>
-    <button onclick="saveProject()">Gem projekt</button>
-    <button onclick="exportPDF()">Eksporter PDF</button>
+    <button data-tool="select">Vælg</button>
+    <button data-tool="rect">Firkant</button>
+    <button data-tool="circle">Cirkel</button>
+    <button data-tool="line">Streg</button>
+    <button data-tool="polyline">Polylinje</button>
+    <button data-tool="cloud">Sky</button>
+    <button data-tool="text">Kommentar</button>
+    <button data-tool="measure">Måling</button>
+    <button id="undo">Fortryd</button>
+    <button id="redo">Gendan</button>
+    <button id="save">Gem projekt</button>
+    <button id="export">Eksportér PDF</button>
   </div>
-  <div id="viewerContainer">
-    <canvas id="pdf-canvas"></canvas>
+  <div id="canvas-container">
+    <canvas id="c"></canvas>
   </div>
   <script src="main.js"></script>
 </body>
 </html>
+

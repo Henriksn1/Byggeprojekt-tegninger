@@ -1,27 +1,47 @@
-body { margin: 0; font-family: Arial, sans-serif; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
 #toolbar {
-  background: #f8f8f8;
-  padding: 10px;
+  background: #333;
+  color: #fff;
+  padding: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  gap: 6px;
 }
-#viewerContainer {
-  height: calc(100vh - 60px);
-  background: #ddd;
-  overflow: auto;
+#toolbar input,
+#toolbar select,
+#toolbar button {
+  font-size: 14px;
+  padding: 6px;
+  border: none;
+  border-radius: 2px;
+}
+#toolbar select, #toolbar input {
+  background: #fff;
+  color: #000;
+}
+#toolbar button {
+  background: #555;
+  color: #fff;
+  cursor: pointer;
+}
+#toolbar button:hover {
+  background: #777;
+}
+#canvas-container {
+  width: 100%;
+  height: calc(100vh - 48px);
+  background: #666;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-canvas {
-  background: white;
-  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+canvas#c {
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
 }
-select, button, input[type="file"] {
-  padding: 5px;
-  font-size: 14px;
-}
-button img { width: 24px; height: 24px; }
+
