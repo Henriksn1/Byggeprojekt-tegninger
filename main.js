@@ -1,224 +1,164 @@
-// === GLOBAL SETUP ===
+// === INIT & RESIZE ===
 const canvas = new fabric.Canvas('c', { selection: false });
-let currentTool = 'select';
-let drawingObject = null;
-let startPoint = null;
-let polyPoints = [];
-let isDrawing = false;
+let currentTool = 'select', drawingObject = null, startPt = null, polyPts = [];
+let state = [], idx = -1;
 
-// Patterns til skraveringer
+// Resize canvas
+function resize() {
+  const h = window.innerHeight - document.getElementById('toolbar').offsetHeight;
+  canvas.setWidth(window.innerWidth).setHeight(h).renderAll();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// === PATTERN DEFINITION ===
+function mk(csz, drawFn) {
+  const c = document.createElement('canvas'), ctx = c.getContext('2d');
+  c.width = c.height = csz; drawFn(ctx, csz);
+  return c;
+}
 const patterns = {
-  concrete: new fabric.Pattern({ source: createDotPattern('#999', 2, 6), repeat: 'repeat' }),
-  wood: new fabric.Pattern({ source: createStripePattern('sienna', 10, 10), repeat: 'repeat' }),
-  'insulation-hard': new fabric.Pattern({ source: createZigzagPattern('#666', 6), repeat: 'repeat' }),
-  'insulation-soft': new fabric.Pattern({ source: createWavePattern('#666', 6), repeat: 'repeat' }),
+  concrete: new fabric.Pattern({ source: mk(8, (ctx,s)=>{ctx.fillStyle='#999';ctx.beginPath();ctx.arc(s/2,s/2,2,0,2*Math.PI);ctx.fill();}), repeat:'repeat' }),
+  wood:     new fabric.Pattern({ source: mk(10,(ctx,s)=>{ctx.strokeStyle='sienna';ctx.lineWidth=3;ctx.moveTo(0,s);ctx.lineTo(s,0);ctx.stroke();}), repeat:'repeat' }),
+  'insulation-hard': new fabric.Pattern({ source: mk(8,(ctx,s)=>{ctx.strokeStyle='#666';ctx.lineWidth=1; ctx.beginPath();ctx.moveTo(0,s/2);ctx.lineTo(s/2,0);ctx.lineTo(s,s/2);ctx.lineTo(s/2,s);ctx.stroke();}), repeat:'repeat' }),
+  'insulation-soft': new fabric.Pattern({ source: mk(8,(ctx,s)=>{ctx.strokeStyle='#666';ctx.beginPath();ctx.moveTo(0,s/2);ctx.quadraticCurveTo(s/4,0,s/2,s/2);ctx.quadraticCurveTo(3*s/4,s,s,s/2);ctx.stroke();}), repeat:'repeat' })
 };
 
-// Sæt canvas‐størrelse til browser‐vindue
-function resizeCanvas() {
-  const h = window.innerHeight - document.getElementById('toolbar').offsetHeight;
-  const w = window.innerWidth;
-  canvas.setHeight(h);
-  canvas.setWidth(w);
-  canvas.renderAll();
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// === TOOLBAR LOGIK ===
-document.querySelectorAll('#toolbar button[data-tool]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    currentTool = btn.getAttribute('data-tool');
+// === TOOLBAR HANDLERS ===
+document.querySelectorAll('#toolbar button[data-tool]').forEach(btn=>{
+  btn.addEventListener('click', ()=> {
+    currentTool = btn.dataset.tool;
     canvas.isDrawingMode = (currentTool === 'cloud');
-    canvas.freeDrawingBrush.width = 2;
+    if (currentTool==='cloud') canvas.freeDrawingBrush.width = 2;
   });
 });
 
-// Materiale‐vælger
-document.getElementById('material-selector').addEventListener('change', e => {
-  const active = canvas.getActiveObject();
-  if (!active) return alert('Vælg en form først!');
+// Material-selector
+document.getElementById('material-selector').addEventListener('change', e=>{
+  const obj = canvas.getActiveObject();
+  if (!obj) return alert('Vælg en form først!');
   const val = e.target.value;
-  if (val === 'none') active.set('fill', 'transparent');
-  else active.set('fill', patterns[val]);
+  obj.set('fill', val==='none'?'transparent':patterns[val]);
   canvas.renderAll();
 });
 
-// === PDF UPLOAD ===
-document.getElementById('file-input').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file || file.type !== 'application/pdf') return;
+// Apply manual rotation
+document.getElementById('apply-rotate').onclick = ()=>{
+  const obj = canvas.getActiveObject();
+  const deg = parseInt(document.getElementById('rotate-angle').value,10) || 0;
+  if (obj) { obj.set('angle',deg); canvas.renderAll(); }
+};
+
+// === PDF UPLOAD & BACKGROUND ===
+document.getElementById('file-input').addEventListener('change', function(e){
+  const f = e.target.files[0];
+  if (!f||f.type!=='application/pdf') return;
   const reader = new FileReader();
   reader.onload = ev => {
     pdfjsLib.getDocument(new Uint8Array(ev.target.result)).promise
-      .then(pdf => pdf.getPage(1))
-      .then(page => {
-        const scale = 1.5;
-        const vp = page.getViewport({ scale });
+      .then(pdf=>pdf.getPage(1))
+      .then(page=>{
+        const vp = page.getViewport({scale:1.5});
         const tmp = document.createElement('canvas');
         tmp.width = vp.width; tmp.height = vp.height;
-        return page.render({ canvasContext: tmp.getContext('2d'), viewport: vp })
-                   .promise.then(() => tmp.toDataURL());
+        return page.render({ canvasContext:tmp.getContext('2d'), viewport:vp }).promise.then(()=>tmp.toDataURL());
       })
-      .then(dataUrl => {
-        fabric.Image.fromURL(dataUrl, img => {
+      .then(url=>{
+        fabric.Image.fromURL(url,img=>{
           canvas.clear();
           canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-          resizeCanvas();
+          resize();
         });
       });
   };
-  reader.readAsArrayBuffer(file);
+  reader.readAsArrayBuffer(f);
 });
 
-// === UNDO/REDO ===
-const state = [];
-let idx = -1;
-function saveState() {
-  idx++;
-  state.splice(idx);
-  state.push(canvas.toJSON());
-}
-canvas.on('object:added', saveState);
-document.getElementById('undo').onclick = () => {
-  if (idx > 0) canvas.loadFromJSON(state[--idx], canvas.renderAll.bind(canvas));
+// === UNDO/REDO, SAVE, EXPORT ===
+canvas.on('object:added',()=>{ idx++; state.splice(idx); state.push(canvas.toJSON()); });
+document.getElementById('undo').onclick = ()=>{ if(idx>0) canvas.loadFromJSON(state[--idx], canvas.renderAll.bind(canvas)); };
+document.getElementById('redo').onclick = ()=>{ if(idx<state.length-1) canvas.loadFromJSON(state[++idx], canvas.renderAll.bind(canvas)); };
+document.getElementById('save').onclick = ()=>{
+  const a=document.createElement('a');
+  a.href='data:text/json,'+encodeURIComponent(JSON.stringify(canvas.toDatalessJSON()));
+  a.download='projekt.json'; a.click();
 };
-document.getElementById('redo').onclick = () => {
-  if (idx < state.length - 1) canvas.loadFromJSON(state[++idx], canvas.renderAll.bind(canvas));
+document.getElementById('export').onclick = ()=>{
+  const url = canvas.toDataURL({format:'png',multiplier:2});
+  const a=document.createElement('a'); a.href=url; a.download='eksport.png'; a.click();
 };
 
-// === GEM & EKSPORT ===
-document.getElementById('save').onclick = () => {
-  const a = document.createElement('a');
-  a.href = 'data:text/json,' + encodeURIComponent(JSON.stringify(canvas.toDatalessJSON()));
-  a.download = 'projekt.json';
-  a.click();
-};
-document.getElementById('export').onclick = () => {
-  const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = 'eksport.png';
-  a.click();
-};
-
-// === TEGNE- & MÅLE-LOGIK ===
-canvas.on('mouse:down', o => {
+// === DRAWING LOGIC ===
+canvas.on('mouse:down', o=>{
   const p = canvas.getPointer(o.e);
-  isDrawing = true;
-  startPoint = p;
-
-  switch (currentTool) {
+  startPt = p; let obj;
+  switch(currentTool){
     case 'rect':
-      drawingObject = new fabric.Rect({ left: p.x, top: p.y, width: 0, height: 0,
-        stroke: '#f00', fill: 'transparent', strokeWidth: 1 });
-      canvas.add(drawingObject);
+      obj = new fabric.Rect({ left:p.x, top:p.y, width:0, height:0, stroke:'#f00', fill:'transparent', strokeWidth:1 });
       break;
     case 'circle':
-      drawingObject = new fabric.Circle({ left: p.x, top: p.y, radius: 0,
-        stroke: '#00f', fill: 'transparent', strokeWidth: 1 });
-      canvas.add(drawingObject);
+      obj = new fabric.Circle({ left:p.x, top:p.y, radius:0, stroke:'#00f', fill:'transparent', strokeWidth:1 });
       break;
     case 'line':
     case 'measure':
-      drawingObject = new fabric.Line([p.x, p.y, p.x, p.y], {
-        stroke: currentTool==='measure' ? '#000' : '#0f0',
-        strokeWidth: 1, strokeDashArray: currentTool==='measure' ? [5,5] : null
-      });
-      canvas.add(drawingObject);
+      obj = new fabric.Line([p.x,p.y,p.x,p.y], { stroke: currentTool==='measure'?'#000':'#0f0', strokeWidth:1, strokeDashArray: currentTool==='measure'? [5,5] : null });
       break;
     case 'polyline':
-      if (!drawingObject) {
-        polyPoints = [p];
-      } else {
-        polyPoints.push(p);
-      }
-      break;
+      if (!drawingObject) polyPts = [p];
+      else { polyPts.push(p); }
+      return;
     case 'text':
-      drawingObject = new fabric.Textbox('Kommentar', { left: p.x, top: p.y, width: 100, fontSize: 14 });
-      canvas.add(drawingObject);
-      finalize();
-      break;
+      obj = new fabric.Textbox('Kommentar', { left:p.x, top:p.y, width:100, fontSize:14 });
+      canvas.add(obj); finalize(); return;
   }
+  if(obj){ drawingObject = obj; canvas.add(obj); }
+  canvas.selection = false;
 });
 
-canvas.on('mouse:move', o => {
-  if (!isDrawing || !drawingObject) return;
+canvas.on('mouse:move', o=>{
+  if (!drawingObject) return;
   const p = canvas.getPointer(o.e);
-  if (drawingObject.type === 'rect') {
-    drawingObject.set({ width: p.x - startPoint.x, height: p.y - startPoint.y });
+  if (drawingObject.type==='rect') drawingObject.set({ width: p.x-startPt.x, height: p.y-startPt.y });
+  if (drawingObject.type==='circle'){
+    const r = Math.hypot(p.x-startPt.x, p.y-startPt.y)/2;
+    drawingObject.set({ radius:r, left:startPt.x-r, top:startPt.y-r });
   }
-  if (drawingObject.type === 'circle') {
-    const r = Math.hypot(p.x - startPoint.x, p.y - startPoint.y) / 2;
-    drawingObject.set({ radius: r, left: startPoint.x - r, top: startPoint.y - r });
-  }
-  if (drawingObject.type === 'line') {
-    drawingObject.set({ x2: p.x, y2: p.y });
-  }
+  if (drawingObject.type==='line') drawingObject.set({ x2:p.x, y2:p.y });
   canvas.renderAll();
 });
 
-canvas.on('mouse:up', o => {
-  if (currentTool === 'polyline') {
-    const p = canvas.getPointer(o.e);
-    polyPoints.push(p);
-    if (polyPoints.length > 1) {
-      if (drawingObject) canvas.remove(drawingObject);
-      drawingObject = new fabric.Polyline(polyPoints, { stroke: '#f0f', fill: 'transparent', strokeWidth: 1 });
-      canvas.add(drawingObject);
-    }
+canvas.on('mouse:up', ()=>{
+  if (currentTool==='polyline'){
+    polyPts.push(canvas.getPointer(event.e));
+    if (drawingObject) canvas.remove(drawingObject);
+    drawingObject = new fabric.Polyline(polyPts, { stroke:'#f0f', fill:'transparent', strokeWidth:1 });
+    canvas.add(drawingObject);
   }
   finalize();
 });
 
-function finalize() {
-  isDrawing = false;
-  drawingObject && drawingObject.setCoords();
-  drawingObject = null;
-  saveState();
-}
-
-// === VINKEL‐SNAP (Ctrl) ===
-canvas.on('object:moving', e => {
-  const obj = e.target;
-  if (e.e.ctrlKey && (obj.type==='line' || obj.type==='polyline')) {
-    obj.set({ angle: Math.round(obj.angle/45)*45 });
+// Snap rotation during move
+canvas.on('object:moving', e=>{
+  const o = e.target;
+  if (e.e.ctrlKey && (o.type==='line' || o.type==='polyline')){
+    o.angle = Math.round(o.angle/15)*15;
     canvas.renderAll();
   }
 });
 
-// === PATTERN‐HELPERS ===
-function createDotPattern(color, r, s) {
-  const c = document.createElement('canvas'), ctx = c.getContext('2d');
-  c.width = c.height = s;
-  ctx.fillStyle = color; ctx.beginPath();
-  ctx.arc(s/2,s/2,r,0,2*Math.PI); ctx.fill();
-  return c;
-}
-function createStripePattern(color, w, h) {
-  const c = document.createElement('canvas'), ctx = c.getContext('2d');
-  c.width = h; c.height = h;
-  ctx.strokeStyle = color; ctx.lineWidth = w;
-  ctx.beginPath(); ctx.moveTo(0,h); ctx.lineTo(h,0); ctx.stroke();
-  return c;
-}
-function createZigzagPattern(color, sz) {
-  const c = document.createElement('canvas'), ctx = c.getContext('2d');
-  c.width = c.height = sz;
-  ctx.strokeStyle = color; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0,sz/2);
-  ctx.lineTo(sz/2,0); ctx.lineTo(sz,sz/2); ctx.lineTo(sz/2,sz); ctx.stroke();
-  return c;
-}
-function createWavePattern(color, sz) {
-  const c = document.createElement('canvas'), ctx = c.getContext('2d');
-  c.width = c.height = sz;
-  ctx.strokeStyle = color; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0,sz/2);
-  ctx.quadraticCurveTo(sz/4,0, sz/2,sz/2);
-  ctx.quadraticCurveTo(3*sz/4,sz, sz,sz/2);
-  ctx.stroke();
-  return c;
+function finalize(){
+  drawingObject && drawingObject.setCoords();
+  drawingObject = null;
 }
 
+// Funktioner til pattern‐canvas
+function createPatternCanvas(size, drawFn){
+  const c = document.createElement('canvas'), ctx=c.getContext('2d');
+  c.width = c.height = size; drawFn(ctx,size);
+  return c;
+}
+function makePattern(ctx,size){ /* placeholder */ }
 
+// (Patterns er defineret ovenfor)
+
+  </script>

@@ -4,41 +4,25 @@
   <meta charset="UTF-8">
   <title>Build-Draw Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- PDF.js CDN -->
+  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <!-- Fabric.js CDN -->
+  <!-- Fabric.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, sans-serif; }
-    #toolbar {
-      background: #333; color: #fff; padding: 8px;
-      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-    }
-    #toolbar input, #toolbar select, #toolbar button {
-      font-size: 14px; padding: 6px; border: none; border-radius: 2px;
-    }
-    #toolbar input, #toolbar select { background: #fff; color: #000; }
-    #toolbar button { background: #555; color: #fff; cursor: pointer; }
-    #toolbar button:hover { background: #777; }
-    #canvas-container {
-      width: 100%; height: calc(100vh - 48px);
-      background: #666; display: flex;
-      justify-content: center; align-items: center;
-    }
-    #c { background: #fff; box-shadow: 0 0 8px rgba(0,0,0,0.3); }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <div id="toolbar">
     <input type="file" id="file-input" accept="application/pdf">
-    <select id="material-selector">
-      <option value="none">Materiale…</option>
+    <select id="material-selector" title="Skravering / Materiale">
+      <option value="none">Ingen skravering</option>
       <option value="concrete">Beton</option>
       <option value="wood">Træ</option>
-      <option value="insulation-hard">Hård isolering</option>
-      <option value="insulation-soft">Blød isolering</option>
+      <option value="insulation-hard">Hård isol.</option>
+      <option value="insulation-soft">Blød isol.</option>
+      <!-- tilføj flere patterns her -->
     </select>
+
     <button data-tool="select">Vælg</button>
     <button data-tool="rect">Firkant</button>
     <button data-tool="circle">Cirkel</button>
@@ -47,132 +31,22 @@
     <button data-tool="cloud">Sky</button>
     <button data-tool="text">Kommentar</button>
     <button data-tool="measure">Måling</button>
+
+    <input type="number" id="rotate-angle" value="0" step="15" min="-180" max="180" title="Indtast vinkel (–180…180°)" style="width:60px;">
+    <button id="apply-rotate">Anvend rotation</button>
+
     <button id="undo">Fortryd</button>
     <button id="redo">Gendan</button>
     <button id="save">Gem projekt</button>
-    <button id="export">Eksportér PDF</button>
+    <button id="export">Eksportér PNG</button>
   </div>
+
   <div id="canvas-container">
     <canvas id="c"></canvas>
   </div>
 
-  <script>
-  // === INIT ===
-  const canvas = new fabric.Canvas('c', { selection: false });
-  let tool = 'select', drawingObject, startPt, polyPts = [], state=[], idx=-1;
-
-  window.addEventListener('resize', () => {
-    const h = window.innerHeight - document.getElementById('toolbar').offsetHeight;
-    canvas.setHeight(h).setWidth(window.innerWidth).renderAll();
-  });
-  window.dispatchEvent(new Event('resize'));
-
-  // Patterns
-  function makePattern(fn){ const c=document.createElement('canvas'),ctx=c.getContext('2d'); fn(ctx,c); return c; }
-  const patterns = {
-    concrete: new fabric.Pattern({ source: makePattern((ctx,c)=>{ c.width=c.height=6; ctx.fillStyle='#999'; ctx.arc(3,3,2,0,2*Math.PI); ctx.fill(); }), repeat:'repeat' }),
-    wood: new fabric.Pattern({ source: makePattern((ctx,c)=>{ c.width=c.height=10; ctx.strokeStyle='sienna'; ctx.lineWidth=3; ctx.moveTo(0,10);ctx.lineTo(10,0); ctx.stroke(); }), repeat:'repeat' }),
-    'insulation-hard': new fabric.Pattern({ source: makePattern((ctx,c)=>{ c.width=c.height=8; ctx.strokeStyle='#666'; ctx.beginPath(); ctx.moveTo(0,4);ctx.lineTo(4,0);ctx.lineTo(8,4);ctx.lineTo(4,8);ctx.stroke(); }), repeat:'repeat' }),
-    'insulation-soft': new fabric.Pattern({ source: makePattern((ctx,c)=>{ c.width=c.height=8; ctx.strokeStyle='#666'; ctx.beginPath(); ctx.moveTo(0,4);ctx.quadraticCurveTo(2,0,4,4);ctx.quadraticCurveTo(6,8,8,4);ctx.stroke(); }), repeat:'repeat' })
-  };
-
-  // Toolbar events
-  document.querySelectorAll('#toolbar button[data-tool]').forEach(b=>b.onclick=()=>{
-    tool=b.dataset.tool;
-    canvas.isDrawingMode=(tool==='cloud');
-    if(tool==='cloud') canvas.freeDrawingBrush.width=2;
-  });
-  document.getElementById('material-selector').onchange = e=>{
-    const o = canvas.getActiveObject();
-    if(!o) return alert('Vælg en form først!');
-    const m=e.target.value;
-    o.set('fill', m==='none'?'transparent':patterns[m]);
-    canvas.renderAll();
-  };
-
-  // PDF upload
-  document.getElementById('file-input').onchange=function(e){
-    const f=e.target.files[0]; if(!f||f.type!=='application/pdf') return;
-    const r=new FileReader();
-    r.onload=ev=>{
-      pdfjsLib.getDocument(new Uint8Array(ev.target.result)).promise
-        .then(pdf=>pdf.getPage(1))
-        .then(pg=>{
-          const vp=pg.getViewport({scale:1.5});
-          const tmp=document.createElement('canvas'); tmp.width=vp.width; tmp.height=vp.height;
-          return pg.render({canvasContext:tmp.getContext('2d'),viewport:vp}).promise.then(()=>tmp.toDataURL());
-        })
-        .then(url=>{
-          fabric.Image.fromURL(url,img=>{
-            canvas.clear();
-            canvas.setBackgroundImage(img,canvas.renderAll.bind(canvas));
-            window.dispatchEvent(new Event('resize'));
-          });
-        });
-    };
-    r.readAsArrayBuffer(f);
-  };
-
-  // State (undo/redo)
-  canvas.on('object:added',()=>{ idx++; state.splice(idx); state.push(canvas.toJSON()); });
-  document.getElementById('undo').onclick=()=>{ if(idx>0) canvas.loadFromJSON(state[--idx],canvas.renderAll.bind(canvas)); };
-  document.getElementById('redo').onclick=()=>{ if(idx<state.length-1) canvas.loadFromJSON(state[++idx],canvas.renderAll.bind(canvas)); };
-
-  // Save & Export
-  document.getElementById('save').onclick=()=>{
-    const a=document.createElement('a');
-    a.href='data:text/json,'+encodeURIComponent(JSON.stringify(canvas.toDatalessJSON()));
-    a.download='projekt.json'; a.click();
-  };
-  document.getElementById('export').onclick=()=>{
-    const d=canvas.toDataURL({format:'png',multiplier:2});
-    const a=document.createElement('a'); a.href=d; a.download='eksport.png'; a.click();
-  };
-
-  // Drawing
-  canvas.on('mouse:down',o=>{
-    const p=canvas.getPointer(o.e); startPt=p; let obj;
-    switch(tool){
-      case 'rect': obj=new fabric.Rect({left:p.x,top:p.y,width:0,height:0,stroke:'#f00',fill:'transparent',strokeWidth:1});break;
-      case 'circle': obj=new fabric.Circle({left:p.x,top:p.y,radius:0,stroke:'#00f',fill:'transparent',strokeWidth:1});break;
-      case 'line':
-      case 'measure': obj=new fabric.Line([p.x,p.y,p.x,p.y],{stroke:tool==='measure'?'#000':'#0f0',strokeDashArray:tool==='measure'?[5,5]:null,strokeWidth:1});break;
-      case 'polyline': if(!drawingObject){ polyPts=[p]; } else { polyPts.push(p); } return;
-      case 'text': obj=new fabric.Textbox('Kommentar',{left:p.x,top:p.y,width:100,fontSize:14});break;
-    }
-    if(obj){ drawingObject=obj; canvas.add(obj); }
-    isDrawing=true;
-  });
-  canvas.on('mouse:move',o=>{
-    if(!isDrawing||!drawingObject) return;
-    const p=canvas.getPointer(o.e);
-    if(drawingObject.type==='rect') drawingObject.set({width:p.x-startPt.x,height:p.y-startPt.y});
-    if(drawingObject.type==='circle'){
-      const r=Math.hypot(p.x-startPt.x,p.y-startPt.y)/2;
-      drawingObject.set({radius:r,left:startPt.x-r,top:startPt.y-r});
-    }
-    if(drawingObject.type==='line') drawingObject.set({x2:p.x,y2:p.y});
-    canvas.renderAll();
-  });
-  canvas.on('mouse:up',()=>{
-    if(tool==='polyline'){
-      polyPts.push(canvas.getPointer(event.e));
-      if(drawingObject) canvas.remove(drawingObject);
-      drawingObject=new fabric.Polyline(polyPts,{stroke:'#f0f',fill:'transparent',strokeWidth:1});
-      canvas.add(drawingObject);
-    }
-    isDrawing=false; drawingObject && drawingObject.setCoords(); drawingObject=null;
-  });
-
-  // Ctrl-snap
-  canvas.on('object:moving',e=>{
-    const o=e.target;
-    if(e.e.ctrlKey&&(o.type==='line'||o.type==='polyline')){
-      o.angle=Math.round(o.angle/45)*45;
-      canvas.renderAll();
-    }
-  });
-  </script>
-
+  <script src="main.js"></script>
+</body>
+</html>
 
 
