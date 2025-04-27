@@ -1,8 +1,6 @@
-
-// Enkel funktionalitet
 document.getElementById('file-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
-    if (file.type === "application/pdf") {
+    if (file && file.type === "application/pdf") {
         const fileReader = new FileReader();
         fileReader.onload = function() {
             const typedarray = new Uint8Array(this.result);
@@ -21,8 +19,8 @@ document.getElementById('file-input').addEventListener('change', function(e) {
     }
 });
 
-function setTool(tool) { console.log('Valgt værktøj:', tool); }
-function undo() { console.log('Undo'); }
-function redo() { console.log('Redo'); }
+function setTool(tool) { console.log('Værktøj valgt:', tool); }
+function undo() { console.log('Fortryd'); }
+function redo() { console.log('Gendan'); }
 function saveProject() { console.log('Gem projekt'); }
-function exportPDF() { console.log('Eksporter PDF'); }
+function exportPDF() { console.log('Eksportér PDF'); }

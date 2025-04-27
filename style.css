@@ -1,6 +1,27 @@
-
 body { margin: 0; font-family: Arial, sans-serif; }
-#toolbar { background: #f8f8f8; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-#viewerContainer { height: calc(100vh - 60px); background: #ddd; overflow: auto; display: flex; justify-content: center; align-items: center; }
-canvas { background: white; box-shadow: 0 0 8px rgba(0,0,0,0.2); }
-select, button, input[type="file"] { padding: 5px; font-size: 14px; }
+#toolbar {
+  background: #f8f8f8;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+#viewerContainer {
+  height: calc(100vh - 60px);
+  background: #ddd;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+canvas {
+  background: white;
+  box-shadow: 0 0 8px rgba(0,0,0,0.2);
+}
+select, button, input[type="file"] {
+  padding: 5px;
+  font-size: 14px;
+}
+button img { width: 24px; height: 24px; }

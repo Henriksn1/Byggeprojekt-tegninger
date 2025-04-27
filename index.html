@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="da">
 <head>
@@ -11,7 +10,12 @@
 <body>
   <div id="toolbar">
     <input type="file" id="file-input" accept="application/pdf">
-    <select id="material-selector"></select>
+    <select id="material-selector">
+      <option value="none">Vælg materiale</option>
+      <option value="concrete">Beton</option>
+      <option value="wood">Træ</option>
+      <option value="insulation">Blød isolering</option>
+    </select>
     <button onclick="setTool('select')">Vælg</button>
     <button onclick="setTool('rect')">Firkant</button>
     <button onclick="setTool('circle')">Cirkel</button>
@@ -22,8 +26,8 @@
     <button onclick="setTool('measure')">Måling</button>
     <button onclick="undo()">Fortryd</button>
     <button onclick="redo()">Gendan</button>
-    <button onclick="saveProject()">Gem</button>
-    <button onclick="exportPDF()">Eksportér PDF</button>
+    <button onclick="saveProject()">Gem projekt</button>
+    <button onclick="exportPDF()">Eksporter PDF</button>
   </div>
   <div id="viewerContainer">
     <canvas id="pdf-canvas"></canvas>
