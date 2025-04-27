@@ -3,27 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <title>Build-Draw Pro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  </script>
+
   <!-- Fabric.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
   <div id="toolbar">
     <input type="file" id="file-input" accept="application/pdf">
-    <button data-tool="rect">Tegn rektangel</button>
+    <!-- Tegneværktøjer -->
+    <button data-tool="select">Vælg</button>
+    <button data-tool="rect">Firkant</button>
+    <button data-tool="circle">Cirkel</button>
+    <button data-tool="line">Linje</button>
+    <button data-tool="polyline">Polylinje</button>
+    <button id="finish-polyline">Afslut polyline</button>
+    <button data-tool="cloud">Sky</button>
+    <button data-tool="text">Kommentar</button>
+    <button data-tool="measure">Måling</button>
+
+    <!-- Kalibrering -->
+    <button id="calibrate">Kalibrer</button>
+    <input type="text" id="calib-input" placeholder="Real længde" style="width:80px;">
+
+    <!-- Farve + Skravering -->
+    <input type="color" id="color-picker" title="Vælg farve">
+    <select id="material-selector" title="Materiale / Skravering">
+      <option value="none">Ingen</option>
+      <option value="concrete">Beton</option>
+      <option value="wood">Træ</option>
+      <option value="insulation-hard">Hård isol.</option>
+      <option value="insulation-soft">Blød isol.</option>
+    </select>
+
+    <!-- Rotation -->
+    <input type="number" id="rotate-angle" value="0" step="15" min="-180" max="180" style="width:60px;">
+    <button id="apply-rotate">Roter</button>
+
+    <!-- Standard -->
     <button id="undo">Fortryd</button>
     <button id="redo">Gendan</button>
+    <button id="save">Gem JSON</button>
+    <button id="export">Eksportér PNG</button>
   </div>
 
   <div id="canvas-container">
     <canvas id="c"></canvas>
   </div>
-
   <script src="main.js"></script>
 </body>
 </html>
+
