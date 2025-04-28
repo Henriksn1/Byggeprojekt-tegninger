@@ -2,13 +2,13 @@
 body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
 
 #toolbar {
-  background: #333;
+  background: #222;
   color: #fff;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 #toolbar input[type=file],
@@ -17,28 +17,29 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 #toolbar input[type=number],
 #toolbar input[type=color] {
   font-size: 14px;
-  padding: 5px;
+  padding: 6px;
   border: none;
-  border-radius: 2px;
+  border-radius: 4px;
   background: #fff;
   color: #000;
 }
 
 #toolbar button {
-  background: #555;
+  background: #444;
   color: #fff;
   border: none;
-  padding: 6px 8px;
+  padding: 8px 10px;
   cursor: pointer;
+  border-radius: 4px;
 }
 #toolbar button:hover {
-  background: #777;
+  background: #666;
 }
 
 #canvas-container {
   width: 100%;
-  height: calc(100vh - 48px);
-  background: #666;
+  height: calc(100vh - 64px);
+  background: #777;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -46,5 +47,6 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 
 canvas#c {
   background: #fff;
-  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
 }
+
