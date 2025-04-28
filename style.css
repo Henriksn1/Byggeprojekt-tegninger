@@ -2,7 +2,7 @@
 body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
 
 #toolbar {
-  background: #333;
+  background: #222;
   color: #fff;
   padding: 6px;
   display: flex;
@@ -18,12 +18,15 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 #toolbar input[type=color],
 #toolbar button {
   font-size: 14px;
-  padding: 5px;
+  padding: 6px;
   border: none;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
-#toolbar select, #toolbar input, #toolbar input[type=color] {
+#toolbar input[type=text],
+#toolbar input[type=number],
+#toolbar input[type=color],
+#toolbar select {
   background: #fff;
   color: #000;
 }
@@ -32,6 +35,7 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
   background: #555;
   color: #fff;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 #toolbar button:hover {
   background: #777;
@@ -39,8 +43,8 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 
 #canvas-container {
   width: 100%;
-  height: calc(100vh - 48px);
-  background: #666;
+  height: calc(100vh - 56px);
+  background: #888;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -48,8 +52,9 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 
 canvas#c {
   background: #fff;
-  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
 }
+
 
 
 

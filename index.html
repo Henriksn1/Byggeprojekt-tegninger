@@ -2,17 +2,17 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>Build-Draw Pro V2</title>
+  <title>Build-Draw Pro v2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- PDF.js -->
+  <!-- PDF.js fra CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
 
-  <!-- Fabric.js -->
+  <!-- Fabric.js fra CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
@@ -20,58 +20,53 @@
 <body>
   <div id="toolbar">
     <input type="file" id="file-input" accept="application/pdf">
+    
+    <!-- Værktøjer -->
+    <button data-tool="select" title="Vælg">Vælg</button>
+    <button data-tool="rect" title="Tegn firkant">Firkant</button>
+    <button data-tool="circle" title="Tegn cirkel">Cirkel</button>
+    <button data-tool="line" title="Tegn linje">Linje</button>
+    <button data-tool="polyline" title="Tegn polylinje">Polylinje</button>
+    <button id="finish-polyline" title="Afslut polylinje">Afslut Poly</button>
+    <button data-tool="cloud" title="Frihåndssky">Sky</button>
+    <button data-tool="text" title="Indsæt tekst">Kommentar</button>
+    <button data-tool="measure" title="Mål afstand">Måling</button>
 
-    <!-- Tegneværktøjer -->
-    <button data-tool="select">Vælg</button>
-    <button data-tool="rect">Firkant</button>
-    <button data-tool="circle">Cirkel</button>
-    <button data-tool="line">Linje</button>
-    <button data-tool="polyline">Polylinje</button>
-    <button id="finish-polyline">Afslut Polyline</button>
-    <button data-tool="cloud">Frihånd</button>
-    <button data-tool="text">Kommentar</button>
-    <button data-tool="measure">Måling</button>
-
-    <!-- Målestok -->
-    <select id="scale-selector">
+    <!-- Kalibrering og målestok -->
+    <button id="calibrate" title="Kalibrer afstand">Kalibrer</button>
+    <input type="text" id="calib-input" placeholder="Reel længde" style="width:80px;">
+    <select id="scale-selector" title="Vælg målestok">
       <option value="1">1:1</option>
-      <option value="0.2">1:5</option>
-      <option value="0.1">1:10</option>
-      <option value="0.04">1:25</option>
-      <option value="0.02">1:50</option>
-      <option value="0.01">1:100</option>
-      <option value="0.005">1:200</option>
-      <option value="0.002">1:500</option>
+      <option value="5">1:5</option>
+      <option value="10">1:10</option>
+      <option value="25">1:25</option>
+      <option value="50">1:50</option>
+      <option value="100">1:100</option>
+      <option value="200">1:200</option>
     </select>
 
-    <!-- Farve & Skravering -->
+    <!-- Farve og skravering -->
     <input type="color" id="color-picker" title="Vælg farve">
-    <select id="material-selector" title="Materiale/Skravering">
+    <select id="material-selector" title="Materiale / Skravering">
       <option value="none">Ingen</option>
       <option value="concrete">Beton</option>
       <option value="wood">Træ</option>
+      <option value="insulation-hard">Hård isolering</option>
+      <option value="insulation-soft">Blød isolering</option>
       <option value="brick">Mursten</option>
       <option value="glass">Glas</option>
-      <option value="steel">Stål</option>
-      <option value="insulation-hard">Hård isol.</option>
-      <option value="insulation-soft">Blød isol.</option>
       <option value="earth">Jord</option>
-      <option value="sand">Sand</option>
-      <option value="gravel">Grus</option>
-      <option value="plaster">Puds</option>
-      <option value="tile">Fliser</option>
-      <option value="water">Vand</option>
     </select>
 
     <!-- Rotation -->
     <input type="number" id="rotate-angle" value="0" step="15" min="-180" max="180" style="width:60px;">
-    <button id="apply-rotate">Roter</button>
+    <button id="apply-rotate" title="Roter objekt">Roter</button>
 
-    <!-- Standardkontroller -->
-    <button id="undo">Fortryd</button>
-    <button id="redo">Gendan</button>
-    <button id="save">Gem JSON</button>
-    <button id="export">Eksportér PNG</button>
+    <!-- Kontrol -->
+    <button id="undo" title="Fortryd">Fortryd</button>
+    <button id="redo" title="Gendan">Gendan</button>
+    <button id="save" title="Gem projekt">Gem</button>
+    <button id="export" title="Eksportér billede">Eksportér</button>
   </div>
 
   <div id="canvas-container">
@@ -81,6 +76,8 @@
   <script src="main.js"></script>
 </body>
 </html>
+
+
 
 
 
