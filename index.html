@@ -8,7 +8,8 @@
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
   </script>
 
   <!-- Fabric.js -->
@@ -20,17 +21,66 @@
   <div id="toolbar">
     <input type="file" id="file-input" accept="application/pdf">
 
-    <!-- Værktøjer -->
+    <!-- Tegneværktøjer -->
     <button data-tool="select">Vælg</button>
     <button data-tool="rect">Firkant</button>
     <button data-tool="circle">Cirkel</button>
     <button data-tool="line">Linje</button>
     <button data-tool="polyline">Polylinje</button>
-    <button data-tool="free">Frihånd</button>
-    <button data-tool="text">Tekst</button>
+    <button id="finish-polyline">Afslut Polyline</button>
+    <button data-tool="cloud">Frihånd</button>
+    <button data-tool="text">Kommentar</button>
     <button data-tool="measure">Måling</button>
-    <button id="finish-polyline">Afslut polyline</button>
 
-    <!-- Farve, rotation -->
-    <input type="color
+    <!-- Målestok -->
+    <select id="scale-selector">
+      <option value="1">1:1</option>
+      <option value="0.2">1:5</option>
+      <option value="0.1">1:10</option>
+      <option value="0.04">1:25</option>
+      <option value="0.02">1:50</option>
+      <option value="0.01">1:100</option>
+      <option value="0.005">1:200</option>
+      <option value="0.002">1:500</option>
+    </select>
+
+    <!-- Farve & Skravering -->
+    <input type="color" id="color-picker" title="Vælg farve">
+    <select id="material-selector" title="Materiale/Skravering">
+      <option value="none">Ingen</option>
+      <option value="concrete">Beton</option>
+      <option value="wood">Træ</option>
+      <option value="brick">Mursten</option>
+      <option value="glass">Glas</option>
+      <option value="steel">Stål</option>
+      <option value="insulation-hard">Hård isol.</option>
+      <option value="insulation-soft">Blød isol.</option>
+      <option value="earth">Jord</option>
+      <option value="sand">Sand</option>
+      <option value="gravel">Grus</option>
+      <option value="plaster">Puds</option>
+      <option value="tile">Fliser</option>
+      <option value="water">Vand</option>
+    </select>
+
+    <!-- Rotation -->
+    <input type="number" id="rotate-angle" value="0" step="15" min="-180" max="180" style="width:60px;">
+    <button id="apply-rotate">Roter</button>
+
+    <!-- Standardkontroller -->
+    <button id="undo">Fortryd</button>
+    <button id="redo">Gendan</button>
+    <button id="save">Gem JSON</button>
+    <button id="export">Eksportér PNG</button>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="c"></canvas>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
+
+
 

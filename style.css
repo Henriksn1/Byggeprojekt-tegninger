@@ -2,44 +2,45 @@
 body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
 
 #toolbar {
-  background: #222;
+  background: #333;
   color: #fff;
-  padding: 8px;
+  padding: 6px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 #toolbar input[type=file],
 #toolbar select,
 #toolbar input[type=text],
 #toolbar input[type=number],
-#toolbar input[type=color] {
+#toolbar input[type=color],
+#toolbar button {
   font-size: 14px;
-  padding: 6px;
+  padding: 5px;
   border: none;
-  border-radius: 4px;
+  border-radius: 2px;
+}
+
+#toolbar select, #toolbar input, #toolbar input[type=color] {
   background: #fff;
   color: #000;
 }
 
 #toolbar button {
-  background: #444;
+  background: #555;
   color: #fff;
-  border: none;
-  padding: 8px 10px;
   cursor: pointer;
-  border-radius: 4px;
 }
 #toolbar button:hover {
-  background: #666;
+  background: #777;
 }
 
 #canvas-container {
   width: 100%;
-  height: calc(100vh - 64px);
-  background: #777;
+  height: calc(100vh - 48px);
+  background: #666;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -47,6 +48,8 @@ body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans
 
 canvas#c {
   background: #fff;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
 }
+
+
 
