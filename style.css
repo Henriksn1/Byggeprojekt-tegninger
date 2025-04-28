@@ -1,58 +1,60 @@
-* { box-sizing: border-box; }
-body, html { margin: 0; height: 100%; overflow: hidden; font-family: Arial, sans-serif; }
+* {
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+}
 
 #toolbar {
-  background: #222;
-  color: #fff;
-  padding: 6px;
+  background: #3a3a3a;
+  padding: 8px;
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
+}
+
+.tool-group {
+  display: flex;
   gap: 6px;
 }
 
-#toolbar input[type=file],
-#toolbar select,
-#toolbar input[type=text],
-#toolbar input[type=number],
-#toolbar input[type=color],
-#toolbar button {
-  font-size: 14px;
-  padding: 6px;
-  border: none;
-  border-radius: 3px;
-}
-
-#toolbar input[type=text],
-#toolbar input[type=number],
-#toolbar input[type=color],
-#toolbar select {
-  background: #fff;
-  color: #000;
-}
-
-#toolbar button {
+#toolbar button, 
+#toolbar select, 
+#toolbar input[type="number"], 
+#toolbar input[type="color"] {
   background: #555;
-  color: #fff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease;
 }
-#toolbar button:hover {
+
+#toolbar button:hover,
+#toolbar select:hover,
+#toolbar input[type="number"]:hover,
+#toolbar input[type="color"]:hover {
   background: #777;
 }
 
 #canvas-container {
   width: 100%;
-  height: calc(100vh - 56px);
-  background: #888;
+  height: calc(100vh - 64px);
+  background: #ccc;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 }
 
-canvas#c {
-  background: #fff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+canvas#drawing-canvas {
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }
 
 

@@ -2,81 +2,63 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>Build-Draw Pro v2</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- PDF.js fra CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-  </script>
-
-  <!-- Fabric.js fra CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
-
+  <title>Byggeprojekt Tegninger</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <div id="toolbar">
-    <input type="file" id="file-input" accept="application/pdf">
-    
-    <!-- Værktøjer -->
-    <button data-tool="select" title="Vælg">Vælg</button>
-    <button data-tool="rect" title="Tegn firkant">Firkant</button>
-    <button data-tool="circle" title="Tegn cirkel">Cirkel</button>
-    <button data-tool="line" title="Tegn linje">Linje</button>
-    <button data-tool="polyline" title="Tegn polylinje">Polylinje</button>
-    <button id="finish-polyline" title="Afslut polylinje">Afslut Poly</button>
-    <button data-tool="cloud" title="Frihåndssky">Sky</button>
-    <button data-tool="text" title="Indsæt tekst">Kommentar</button>
-    <button data-tool="measure" title="Mål afstand">Måling</button>
+    <div class="tool-group">
+      <button id="select-tool" data-tool="select">Markér</button>
+      <button id="draw-rect" data-tool="rect">Rektangel</button>
+      <button id="draw-line" data-tool="line">Linje</button>
+      <button id="draw-circle" data-tool="circle">Cirkel</button>
+      <button id="draw-text" data-tool="text">Tekst</button>
+      <button id="draw-cloud" data-tool="cloud">Sky</button>
+    </div>
 
-    <!-- Kalibrering og målestok -->
-    <button id="calibrate" title="Kalibrer afstand">Kalibrer</button>
-    <input type="text" id="calib-input" placeholder="Reel længde" style="width:80px;">
-    <select id="scale-selector" title="Vælg målestok">
-      <option value="1">1:1</option>
-      <option value="5">1:5</option>
-      <option value="10">1:10</option>
-      <option value="25">1:25</option>
-      <option value="50">1:50</option>
-      <option value="100">1:100</option>
-      <option value="200">1:200</option>
-    </select>
+    <div class="tool-group">
+      <button id="measure-tool" data-tool="measure">Mål</button>
+      <select id="scale-selector">
+        <option value="1">1:1</option>
+        <option value="5">1:5</option>
+        <option value="10">1:10</option>
+        <option value="25">1:25</option>
+        <option value="50">1:50</option>
+        <option value="100">1:100</option>
+      </select>
+      <input type="number" id="manual-scale" placeholder="Egen målestok">
+    </div>
 
-    <!-- Farve og skravering -->
-    <input type="color" id="color-picker" title="Vælg farve">
-    <select id="material-selector" title="Materiale / Skravering">
-      <option value="none">Ingen</option>
-      <option value="concrete">Beton</option>
-      <option value="wood">Træ</option>
-      <option value="insulation-hard">Hård isolering</option>
-      <option value="insulation-soft">Blød isolering</option>
-      <option value="brick">Mursten</option>
-      <option value="glass">Glas</option>
-      <option value="earth">Jord</option>
-    </select>
+    <div class="tool-group">
+      <select id="hatch-selector">
+        <option value="none">Ingen skravering</option>
+        <option value="concrete">Beton</option>
+        <option value="wood">Træ</option>
+        <option value="brick">Mursten</option>
+        <option value="insulation-soft">Isolering (blød)</option>
+        <option value="insulation-hard">Isolering (hård)</option>
+        <option value="steel">Stål</option>
+      </select>
+      <input type="color" id="color-picker" value="#000000">
+    </div>
 
-    <!-- Rotation -->
-    <input type="number" id="rotate-angle" value="0" step="15" min="-180" max="180" style="width:60px;">
-    <button id="apply-rotate" title="Roter objekt">Roter</button>
-
-    <!-- Kontrol -->
-    <button id="undo" title="Fortryd">Fortryd</button>
-    <button id="redo" title="Gendan">Gendan</button>
-    <button id="save" title="Gem projekt">Gem</button>
-    <button id="export" title="Eksportér billede">Eksportér</button>
+    <div class="tool-group">
+      <button id="undo">Fortryd</button>
+      <button id="redo">Gentag</button>
+      <button id="save">Gem projekt</button>
+      <button id="export">Eksporter billede</button>
+    </div>
   </div>
 
   <div id="canvas-container">
-    <canvas id="c"></canvas>
+    <canvas id="drawing-canvas"></canvas>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
-
 
 
 
