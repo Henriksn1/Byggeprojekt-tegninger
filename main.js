@@ -1,264 +1,191 @@
-const canvas = new fabric.Canvas('drawing-canvas', { selection: false });
-let tool = 'select', activeObj = null, startPt = null, polyPts = [], isDrawing = false;
-let scaleFactor = 1, calibPts = [];
-let state = [], idx = -1;
+// Konfiguration
+const DEFAULT_TOOL = 'pan';
+const SNAP_THRESHOLD = 10; // pixels
+let pdfDoc = null, pageNum = 1;
+let scale = 1.5;
+let currentTool = DEFAULT_TOOL;
+let pdfCanvas, pdfCtx, overlayCanvas, overlayCtx;
+let drawings = { draw: [], measure: [], text: [] };
+let snapPoints = [];
 
-function resize() {
-  const h = window.innerHeight - document.getElementById('toolbar').offsetHeight;
-  canvas.setWidth(window.innerWidth).setHeight(h).renderAll();
-}
-window.addEventListener('resize', resize);
-resize();
+// Initialisering efter DOM
+window.addEventListener('DOMContentLoaded', () => {
+  pdfCanvas = document.getElementById('pdfCanvas');
+  overlayCanvas = document.getElementById('overlayCanvas');
+  pdfCtx = pdfCanvas.getContext('2d');
+  overlayCtx = overlayCanvas.getContext('2d');
 
-function mk(sz, fn) {
-  const c = document.createElement('canvas'), ctx = c.getContext('2d');
-  c.width = c.height = sz;
-  fn(ctx, sz);
-  return c;
-}
-const patterns = {
-  concrete: new fabric.Pattern({ source: mk(8, (c, s) => {
-    c.fillStyle = '#999';
-    c.beginPath();
-    c.arc(s / 2, s / 2, 2, 0, 2 * Math.PI);
-    c.fill();
-  }), repeat: 'repeat' }),
-  wood: new fabric.Pattern({ source: mk(10, (c, s) => {
-    c.strokeStyle = 'sienna';
-    c.lineWidth = 3;
-    c.moveTo(0, s);
-    c.lineTo(s, 0);
-    c.stroke();
-  }), repeat: 'repeat' }),
-  'insulation-hard': new fabric.Pattern({ source: mk(8, (c, s) => {
-    c.strokeStyle = '#666';
-    c.beginPath();
-    c.moveTo(0, s / 2);
-    c.lineTo(s / 2, 0);
-    c.lineTo(s, s / 2);
-    c.lineTo(s / 2, s);
-    c.stroke();
-  }), repeat: 'repeat' }),
-  'insulation-soft': new fabric.Pattern({ source: mk(8, (c, s) => {
-    c.strokeStyle = '#666';
-    c.beginPath();
-    c.moveTo(0, s / 2);
-    c.quadraticCurveTo(s / 4, 0, s / 2, s / 2);
-    c.quadraticCurveTo(3 * s / 4, s, s, s / 2);
-    c.stroke();
-  }), repeat: 'repeat' })
-};
-
-document.querySelectorAll('#toolbar button[data-tool]').forEach(btn => {
-  btn.onclick = () => {
-    tool = btn.dataset.tool;
-    canvas.isDrawingMode = (tool === 'cloud');
-    if (tool === 'cloud') canvas.freeDrawingBrush.width = 2;
-  };
+  setupCanvasSize();
+  setupTools();
+  setupLayerToggles();
+  setupFileInput();
+  setupExport();
 });
 
-document.getElementById('finish-polyline').onclick = () => {
-  if (polyPts.length > 1) {
-    const pl = new fabric.Polyline(polyPts, { stroke: '#00f', strokeWidth: 2, fill: 'transparent' });
-    canvas.add(pl);
-    finalize();
-  }
-};
-
-document.getElementById('material-selector').onchange = e => {
-  const o = canvas.getActiveObject();
-  if (!o) return alert('Vælg en form først!');
-  const v = e.target.value;
-  o.set('fill', v === 'none' ? 'transparent' : patterns[v]);
-  canvas.renderAll();
-};
-
-document.getElementById('color-picker').onchange = e => {
-  canvas.freeDrawingBrush.color = e.target.value;
-  const o = canvas.getActiveObject();
-  if (o) { o.set('stroke', e.target.value); canvas.renderAll(); }
-};
-
-document.getElementById('apply-rotate').onclick = () => {
-  const o = canvas.getActiveObject();
-  if (o) {
-    o.set('angle', parseInt(document.getElementById('rotate-angle').value) || 0);
-    canvas.renderAll();
-  }
-};
-
-canvas.on('object:moving', e => {
-  const o = e.target;
-  if (e.e.ctrlKey && (o.type === 'line' || o.type === 'polyline')) {
-    o.angle = Math.round(o.angle / 15) * 15;
-    canvas.renderAll();
-  }
-});
-
-document.getElementById('calibrate').onclick = () => {
-  tool = 'calibrate';
-  calibPts = [];
-  alert('Klik på to punkter for kalibrering');
-};
-
-document.getElementById('file-input').onchange = e => {
-  const f = e.target.files[0];
-  if (!f || f.type !== 'application/pdf') return alert('Vælg en PDF!');
-  const r = new FileReader();
-  r.onload = ev => {
-    pdfjsLib.getDocument(new Uint8Array(ev.target.result)).promise
-      .then(pdf => pdf.getPage(1))
-      .then(page => {
-        const vp = page.getViewport({ scale: 1.5 });
-        const tmp = document.createElement('canvas');
-        tmp.width = vp.width;
-        tmp.height = vp.height;
-        return page.render({ canvasContext: tmp.getContext('2d'), viewport: vp })
-          .promise.then(() => tmp.toDataURL());
-      })
-      .then(url => {
-        fabric.Image.fromURL(url, img => {
-          canvas.clear();
-          canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-          resize();
-        });
-      })
-      .catch(console.error);
-  };
-  r.readAsArrayBuffer(f);
-};
-
-canvas.on('object:modified', saveState);
-function saveState() {
-  idx++;
-  state.splice(idx);
-  state.push(canvas.toJSON());
+function setupCanvasSize() {
+  overlayCanvas.width = pdfCanvas.width = 800;
+  overlayCanvas.height = pdfCanvas.height = 600;
 }
 
-document.getElementById('undo').onclick = () => {
-  if (idx > 0) canvas.loadFromJSON(state[--idx], canvas.renderAll.bind(canvas));
-};
-document.getElementById('redo').onclick = () => {
-  if (idx < state.length - 1) canvas.loadFromJSON(state[++idx], canvas.renderAll.bind(canvas));
-};
+function setupFileInput() {
+  const fileInput = document.getElementById('fileInput');
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const arrayBuffer = await file.arrayBuffer();
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    pdfDoc = await loadingTask.promise;
+    renderPage(pageNum);
+  });
+}
 
-document.getElementById('save').onclick = () => {
-  const a = document.createElement('a');
-  a.href = 'data:text/json,' + encodeURIComponent(JSON.stringify(canvas.toDatalessJSON()));
-  a.download = 'projekt.json';
-  a.click();
-};
-document.getElementById('export').onclick = () => {
-  const d = canvas.toDataURL({ format: 'png', multiplier: 2 });
-  const a = document.createElement('a');
-  a.href = d;
-  a.download = 'eksport.png';
-  a.click();
-};
+async function renderPage(num) {
+  const page = await pdfDoc.getPage(num);
+  const viewport = page.getViewport({ scale });
+  pdfCanvas.width = overlayCanvas.width = viewport.width;
+  pdfCanvas.height = overlayCanvas.height = viewport.height;
+  await page.render({ canvasContext: pdfCtx, viewport }).promise;
+  computeSnapPoints(viewport);
+  redrawOverlay();
+}
 
-canvas.on('mouse:down', e => {
-  const p = canvas.getPointer(e.e);
+function computeSnapPoints(viewport) {
+  snapPoints = [];
+  // PDF-corners
+  snapPoints.push({ x: 0, y: 0 });
+  snapPoints.push({ x: viewport.width, y: 0 });
+  snapPoints.push({ x: 0, y: viewport.height });
+  snapPoints.push({ x: viewport.width, y: viewport.height });
+  // Tilføj øvrige endpoints fra drawings
+  Object.values(drawings).flat().forEach(shape => {
+    shape.points.forEach(pt => snapPoints.push(pt));
+  });
+}
+
+function setupTools() {
+  document.querySelectorAll('#toolbar button').forEach(btn => {
+    btn.addEventListener('click', () => selectTool(btn.id.replace('Tool','').toLowerCase()));
+  });
+  overlayCanvas.addEventListener('mousedown', toolPointerDown);
+  overlayCanvas.addEventListener('mouseup', toolPointerUp);
+}
+
+function selectTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('#toolbar button').forEach(btn => {
+    btn.classList.toggle('active', btn.id === tool + 'Tool');
+  });
+}
+
+let isDrawing = false;
+let startPt = null;
+function toolPointerDown(evt) {
+  const pt = getMousePos(evt);
+  const snapped = snapToPoint(pt);
+  startPt = snapped || pt;
   isDrawing = true;
-  startPt = p;
-  let newObj;
-  if (tool === 'calibrate') {
-    calibPts.push(p);
-    if (calibPts.length === 2) {
-      const d = Math.hypot(calibPts[1].x - calibPts[0].x, calibPts[1].y - calibPts[0].y);
-      const real = parseFloat(document.getElementById('calib-input').value) || 1;
-      scaleFactor = real / d;
-      alert(`Kalibreret: 1 px = ${scaleFactor.toFixed(3)} enhed`);
-      tool = 'select';
-    }
-    return;
-  }
-  switch (tool) {
-    case 'rect':
-      newObj = new fabric.Rect({
-        left: p.x,
-        top: p.y,
-        width: 0,
-        height: 0,
-        stroke: canvas.freeDrawingBrush.color || '#f00',
-        fill: 'transparent',
-        strokeWidth: 2
-      });
-      break;
-    case 'circle':
-      newObj = new fabric.Circle({
-        left: p.x,
-        top: p.y,
-        radius: 0,
-        stroke: '#00f',
-        fill: 'transparent',
-        strokeWidth: 2
-      });
-      break;
-    case 'line':
-    case 'measure':
-      newObj = new fabric.Line([p.x, p.y, p.x, p.y], {
-        stroke: tool === 'measure' ? '#000' : (canvas.freeDrawingBrush.color || '#0f0'),
-        strokeDashArray: tool === 'measure' ? [5, 5] : null,
-        strokeWidth: 2
-      });
-      break;
-    case 'polyline':
-      if (!activeObj) polyPts = [p];
-      else polyPts.push(p);
-      return;
-    case 'text':
-      newObj = new fabric.Textbox('Kommentar', {
-        left: p.x,
-        top: p.y,
-        width: 120,
-        fontSize: 14
-      });
-      canvas.add(newObj);
-      finalize();
-      return;
-  }
-  activeObj = newObj;
-  canvas.add(activeObj);
-  activeObj.setCoords();
-});
-
-canvas.on('mouse:move', e => {
-  if (!isDrawing || !activeObj) return;
-  const p = canvas.getPointer(e.e);
-  if (activeObj.type === 'rect') activeObj.set({ width: p.x - startPt.x, height: p.y - startPt.y });
-  if (activeObj.type === 'circle') {
-    const r = Math.hypot(p.x - startPt.x, p.y - startPt.y) / 2;
-    activeObj.set({ radius: r, left: startPt.x - r, top: startPt.y - r });
-  }
-  if (activeObj.type === 'line') activeObj.set({ x2: p.x, y2: p.y });
-  canvas.renderAll();
-});
-
-canvas.on('mouse:up', e => {
-  if (tool === 'polyline') {
-    polyPts.push(canvas.getPointer(e.e));
-    if (activeObj) canvas.remove(activeObj);
-    activeObj = new fabric.Polyline(polyPts, { stroke: '#00f', strokeWidth: 2, fill: 'transparent' });
-    canvas.add(activeObj);
-  }
-  if (tool === 'measure') {
-    const p2 = canvas.getPointer(e.e);
-    const distPx = Math.hypot(p2.x - startPt.x, p2.y - startPt.y);
-    const real = (distPx * scaleFactor).toFixed(2);
-    const midX = (startPt.x + p2.x) / 2, midY = (startPt.y + p2.y) / 2;
-    const text = new fabric.Text(real, { left: midX, top: midY - 10, fontSize: 12, fill: '#000' });
-    canvas.add(text);
-  }
-  finalize();
-});
-
-function finalize() {
-  isDrawing = false;
-  if (activeObj) activeObj.setCoords();
-  saveState();
-  activeObj = null;
 }
 
+function toolPointerUp(evt) {
+  if (!isDrawing) return;
+  const pt = getMousePos(evt);
+  const snapped = snapToPoint(pt);
+  const endPt = snapped || pt;
 
+  if (currentTool === 'draw') {
+    drawings.draw.push({ points: [startPt, endPt] });
+  } else if (currentTool === 'rect') {
+    drawings.draw.push({ isRect: true, points: [startPt, endPt] });
+  } else if (currentTool === 'measure') {
+    const dist = getDistance(startPt, endPt);
+    drawings.measure.push({ points: [startPt, endPt], text: dist.toFixed(2) + ' px' });
+  } else if (currentTool === 'text') {
+    const text = prompt('Indtast tekst:');
+    if (text) drawings.text.push({ points: [endPt], text });
+  }
+  isDrawing = false;
+  computeSnapPoints(pdfCtx.canvas);
+  redrawOverlay();
+}
 
+function getMousePos(evt) {
+  const rect = overlayCanvas.getBoundingClientRect();
+  return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+}
 
+function snapToPoint(pt) {
+  let nearest = null;
+  let minDist = SNAP_THRESHOLD;
+  snapPoints.forEach(sp => {
+    const d = getDistance(pt, sp);
+    if (d < minDist) {
+      minDist = d;
+      nearest = sp;
+    }
+  });
+  return nearest;
+}
+
+function getDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function setupLayerToggles() {
+  document.querySelectorAll('#layers input').forEach(chk => {
+    chk.addEventListener('change', redrawOverlay);
+  });
+}
+
+function redrawOverlay() {
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  ['draw','measure','text'].forEach(layer => {
+    const visible = document.querySelector(`input[data-layer="${layer}"]`).checked;
+    if (!visible) return;
+    overlayCtx.save();
+    overlayCtx.strokeStyle = layer === 'measure' ? '#e91e63' : '#007acc';
+    overlayCtx.fillStyle = '#e91e63';
+    overlayCtx.lineWidth = 2;
+    drawings[layer].forEach(item => {
+      if (layer === 'draw') drawShape(item);
+      if (layer === 'measure') drawMeasure(item);
+      if (layer === 'text') drawText(item);
+    });
+    overlayCtx.restore();
+  });
+}
+
+function drawShape(item) {
+  const [a, b] = item.points;
+  if (item.isRect) {
+    overlayCtx.strokeRect(a.x, a.y, b.x - a.x, b.y - a.y);
+  } else {
+    overlayCtx.beginPath();
+    overlayCtx.moveTo(a.x, a.y);
+    overlayCtx.lineTo(b.x, b.y);
+    overlayCtx.stroke();
+  }
+}
+
+function drawMeasure(item) {
+  drawShape(item);
+  const [a, b] = item.points;
+  const mid = { x: (a.x + b.x)/2, y: (a.y + b.y)/2 };
+  overlayCtx.fillText(item.text, mid.x + 5, mid.y - 5);
+}
+
+function drawText(item) {
+  const [pt] = item.points;
+  overlayCtx.fillText(item.text, pt.x, pt.y);
+}
+
+function setupExport() {
+  document.getElementById('exportPdf').addEventListener('click', () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: [pdfCanvas.width, pdfCanvas.height] });
+    // Tilføj PDF-side
+    doc.addImage(pdfCanvas.toDataURL('image/png'), 'PNG', 0, 0);
+    // Tilføj annotations
+    doc.addImage(overlayCanvas.toDataURL('image/png'), 'PNG', 0, 0);
+    doc.save('annoteret.pdf');
+  });
+}

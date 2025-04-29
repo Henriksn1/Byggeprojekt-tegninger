@@ -1,84 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Upload</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-    <style>
-        #toolbar {
-            background: #333;
-            color: #fff;
-            padding: 6px;
-        }
-        #canvas-container {
-            width: 100%;
-            height: calc(100vh - 48px);
-            background: #666;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        canvas {
-            background: #fff;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mit Bluebeam Light</title>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <!-- jsPDF for eksport -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="toolbar">
-        <input type="file" id="file-input" />
-    </div>
+  <header>
+    <h1>Mit Bluebeam Light</h1>
+    <input type="file" id="fileInput" accept="application/pdf" />
+  </header>
 
-    <div id="canvas-container">
-        <canvas id="c"></canvas>
-    </div>
+  <section id="toolbar">
+    <button id="panTool">Pan</button>
+    <button id="drawTool">Tegn</button>
+    <button id="rectTool">Rekt.</button>
+    <button id="measureTool">Mål</button>
+    <button id="textTool">Tekst</button>
+    <button id="exportPdf">Eksporter PDF</button>
+  </section>
 
-    <script>
-        const canvas = new fabric.Canvas('c');
-        
-        document.getElementById('file-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && file.type === 'application/pdf') {
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const typedarray = new Uint8Array(this.result);
-                    pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-                        pdf.getPage(1).then(page => {
-                            const scale = 1.5;
-                            const viewport = page.getViewport({ scale: scale });
+  <section id="layers">
+    <label><input type="checkbox" data-layer="draw" checked /> Tegning</label>
+    <label><input type="checkbox" data-layer="measure" checked /> Måling</label>
+    <label><input type="checkbox" data-layer="text" checked /> Tekst</label>
+  </section>
 
-                            const canvasElement = document.createElement('canvas');
-                            const context = canvasElement.getContext('2d');
-                            canvasElement.height = viewport.height;
-                            canvasElement.width = viewport.width;
+  <div id="viewerContainer">
+    <canvas id="pdfCanvas"></canvas>
+    <canvas id="overlayCanvas"></canvas>
+  </div>
 
-                            page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
-                                const imgUrl = canvasElement.toDataURL();
-                                fabric.Image.fromURL(imgUrl, function(img) {
-                                    canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-                                    resize();  // Adjust size if needed
-                                });
-                            });
-                        });
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-            } else {
-                alert('Only PDF files are supported.');
-            }
-        });
-
-        function resize() {
-            const h = window.innerHeight - document.getElementById('toolbar').offsetHeight;
-            canvas.setWidth(window.innerWidth).setHeight(h).renderAll();
-        }
-
-        window.addEventListener('resize', resize);
-        resize();
-    </script>
+  <script src="main.js"></script>
 </body>
 </html>
-
 
